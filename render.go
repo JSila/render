@@ -18,10 +18,16 @@ type Binder interface {
 // Bind decodes a request body and executes the Binder method of the
 // payload structure.
 func Bind(r *http.Request, v Binder) error {
-	if err := Decode(r, v); err != nil {
+	err := Decode(r, v)
+	if err != nil {
 		return err
 	}
-	return binder(r, v)
+	valid, ok := v.(interface{ OK() error })
+	err = binder(r, v)
+	if !ok || err != nil {
+		return err
+	}
+	return valid.OK()
 }
 
 // Render renders a single payload and respond to the client request.
